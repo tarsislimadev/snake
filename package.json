@@ -6,5 +6,10 @@
     "start": "npx http-server ."
   },
   "license": "MIT",
-  "type": "commonjs"
+  "type": "commonjs",
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "globals": "^17.3.0"
+  }
 }
