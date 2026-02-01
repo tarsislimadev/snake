@@ -1,14 +1,12 @@
 import { HTML } from './libs/afrontend/index.js'
-import { PageComponent } from './components/page.component.js'
 import { CanvasComponent } from './components/canvas.component.js'
 import { ImageComponent } from './components/image.component.js'
 import { createNewPeer, getControlsUrl } from './utils/peer.js'
-import { TextComponent } from './components/text.component.js'
 import { LinkComponent } from './components/link.component.js'
 import { qrcode } from './utils/functions.js'
 import { random } from './utils/math.js'
 
-export class Page extends PageComponent {
+export class Page extends HTML {
   canvas = new CanvasComponent()
   qrcode = new HTML()
 
@@ -27,7 +25,6 @@ export class Page extends PageComponent {
 
   onCreate() {
     super.onCreate()
-    this.append(new TextComponent({ text: 'snake' }))
     const container = this.getContainer()
     container.append(this.getCanvas())
     container.append(this.getQRCode())
@@ -48,6 +45,8 @@ export class Page extends PageComponent {
       this.addPlayer(conn.peer)
       conn.on('data', (move) => this.movePlayer(conn.peer, move))
     })
+    peer.on('disconnected', () => peer.reconnect())
+    peer.on('close', () => this.removePlayer(peer))
     return peer
   }
 
@@ -104,6 +103,8 @@ export class Page extends PageComponent {
   }
 
   addPlayer(id) { this.state.players[id] = { x: random(9), y: random(9) } }
+
+  removePlayer(id) { this.state.players = Object.keys(this.state.players).filter((k) => k != id).map((k) => this.state.players[k]) }
 
   runAnimationFrame() {
     this.reset()

@@ -1,10 +1,9 @@
 import { HTML } from './libs/afrontend/index.js'
-import { PageComponent } from './components/page.component.js'
 import { ButtonComponent } from './components/button.component.js'
 import { getURLSearchParam } from './utils/url.js'
 import { createNewPeer } from './utils/peer.js'
 
-export class Page extends PageComponent {
+export class Page extends HTML {
   state = {
     keys: ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'],
     id: getURLSearchParam('id'),
@@ -32,8 +31,25 @@ export class Page extends PageComponent {
   }
 
   getButtons() {
+    const arrows = [
+      ['', 'ArrowUp', ''],
+      ['ArrowLeft', '', 'ArrowRight'],
+      ['', 'ArrowDown', ''],
+    ]
+
     const buttons = new HTML()
-    Array.from(this.state.keys).map((key) => buttons.append(this.createButton(key)))
+    Array.from(Array(3)).map((_, l) => {
+      const line = new HTML()
+      line.setStyle('display', 'flex')
+      line.setStyle('justify-content', 'space-between')
+      Array.from(Array(3)).map((_, c) => {
+        const column = new HTML()
+        line.append(column)
+        const arrow = arrows[l][c]
+        if (arrow) line.append(this.createButton(arrow))
+      })
+      buttons.append(line)
+    })
     return buttons
   }
 
