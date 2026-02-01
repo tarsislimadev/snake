@@ -1,9 +1,9 @@
-import { HTML, nImage } from './../libs/afrontend/index.js'
+import { nImage } from './../libs/afrontend/index.js'
 
 export class ImageComponent extends nImage {
   getName() { return 'image-component' }
 
-  state = { src: '', alt: '', }
+  state = { src: '', alt: '' }
 
   constructor({ src, alt = '' }) {
     super()
