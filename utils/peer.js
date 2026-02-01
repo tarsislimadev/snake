@@ -37,13 +37,13 @@ class MyPeer extends Peer {
     const url = new URL(window.location)
     url.pathname = `/projects/${this.state.project}/controls.html?id=${this.id}`
     url.search = ''
-    return (url.toString()).replace('%3F', '?')
+    return url.toString().replace('%3F', '?')
   }
 }
 
 export const createJustNewPeer = (project) => (new MyPeer()).setProject(project)
 
-export const createNewPeer = (project, { qrcode = false, id = undefined } = {}) => {
+export const createNewPeer = (project, { id = undefined } = {}) => {
   const peer = new MyPeer(id)
   peer.setProject(project)
 
@@ -82,4 +82,9 @@ export const createNewPeer = (project, { qrcode = false, id = undefined } = {}) 
   return peer
 }
 
-export const getControlsUrl = () => { }
+export const getControlsUrl = (name, id) => {
+  const url = new URL(window.location)
+  url.pathname = 'controls.html'
+  url.searchParams.set('id', id)
+  return [url.toString(), encodeURIComponent(url.toString())]
+}

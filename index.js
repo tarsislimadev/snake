@@ -77,9 +77,9 @@ export class Page extends PageComponent {
 
   setQRCode() {
     this.qrcode.clear()
-    const url = getControlsUrl('snake', this.state.peer.id)
+    const [url, url_coded] = getControlsUrl('snake', this.state.peer.id)
     const link = new LinkComponent({ href: url })
-    const image = new ImageComponent({ src: qrcode(url) })
+    const image = new ImageComponent({ src: qrcode(url_coded) })
     image.setContainerStyle('max-width', '10rem')
     link.append(image)
     this.qrcode.append(link)
