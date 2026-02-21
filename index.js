@@ -1,138 +1,69 @@
-import { HTML } from './libs/afrontend/index.js'
-import { CanvasComponent } from './components/canvas.component.js'
-import { ImageComponent } from './components/image.component.js'
-import { createNewPeer, getControlsUrl } from './utils/peer.js'
-import { LinkComponent } from './components/link.component.js'
-import { qrcode } from './utils/functions.js'
-import { random } from './utils/math.js'
+import { Clock } from './clock.js'
 
-export class Page extends HTML {
-  canvas = new CanvasComponent()
-  qrcode = new HTML()
+export class Game {
+  domElement = document.createElement('canvas')
+  ctx = null
+  clock = new Clock()
 
   state = {
-    peer: this.createNewPeer(),
-    ctx: null,
-    players: {},
-    fruits: [{ x: random(9), y: random(9) }],
-    moves: {
-      ArrowDown: (id) => this.state.players[id].y += this.state.players[id].y == 9 ? 0 : 1,
-      ArrowRight: (id) => this.state.players[id].x += this.state.players[id].x == 9 ? 0 : 1,
-      ArrowUp: (id) => this.state.players[id].y -= this.state.players[id].y == 0 ? 0 : 1,
-      ArrowLeft: (id) => this.state.players[id].x -= this.state.players[id].x == 0 ? 0 : 1,
-    }
+    score: 0,
+    player: { x: 0, y: 0, direction: 'down' },
+    food: { x: 2, y: 2 },
+    scene: { width: 10, height: 10 },
+    running: false
   }
 
-  onCreate() {
-    super.onCreate()
-    const container = this.getContainer()
-    container.append(this.getCanvas())
-    container.append(this.getQRCode())
-    this.append(container)
+  constructor() { }
+
+  start() {
+    this.set2d()
+    this.setEvents()
+    this.clock.start()
+    this.state.running = true
+    this.update()
   }
 
-  getContainer() {
-    const html = new HTML()
-    html.setStyle('width', '380px')
-    html.setStyle('margin', '0 auto')
-    return html
+  set2d() {
+    this.ctx = this.domElement.getContext('2d')
+    this.domElement.setAttribute('width', 10 * this.state.scene.width + 'px')
+    this.domElement.setAttribute('height', 10 * this.state.scene.height + 'px')
   }
 
-  createNewPeer() {
-    const peer = createNewPeer('snake')
-    peer.on('open', (open) => this.onPeerOpen(open))
-    peer.on('connection', (conn) => {
-      this.addPlayer(conn.peer)
-      conn.on('data', (move) => this.movePlayer(conn.peer, move))
+  setEvents() {
+    this.clock.addEventListener('tick', () => {
+      switch (this.state.player.direction) {
+        case 'left': return this.state.player.x -= 1
+        case 'right': return this.state.player.x += 1
+        case 'up': return this.state.player.y -= 1
+        case 'down': return this.state.player.y += 1
+      }
     })
-    peer.on('disconnected', () => peer.reconnect())
-    peer.on('close', () => this.removePlayer(peer))
-    return peer
+
+    window.addEventListener('keyup', (e) => {
+      switch (e.code) {
+        case 'ArrowLeft': return this.state.player.direction = 'left'
+        case 'ArrowRight': return this.state.player.direction = 'right'
+        case 'ArrowUp': return this.state.player.direction = 'up'
+        case 'ArrowDown': return this.state.player.direction = 'down'
+      }
+    })
   }
 
-  onPeerOpen() {
-    this.setQRCode()
-    this.runAnimationFrame()
+  update() {
+    // clear
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillRect(0, 0, 10 * this.state.scene.width, 10 * this.state.scene.height)
+    // food
+    this.ctx.fillStyle = '#ff0000';
+    this.ctx.fillRect(10 * this.state.food.x, 10 * this.state.food.y, 10, 10)
+    // player
+    this.ctx.fillStyle = '#000000';
+    this.ctx.fillRect(10 * this.state.player.x, 10 * this.state.player.y, 10, 10)
+    // update
+    if (this.state.running) requestAnimationFrame(this.update.bind(this))
   }
 
-  getSize(n) { return n * 32 }
-
-  getCanvas() {
-    this.state.ctx = this.canvas.getContext()
-    this.canvas.setStyle('box-shadow', '0rem 0rem 1rem 1rem rgba(0, 0, 0, 0.5)')
-    this.canvas.setStyle('border', 'calc(1rem / 8) solid rgba(0, 0, 0, 0.5)')
-    this.canvas.setContainerStyle('width', `${this.getSize(10)}px`)
-    this.canvas.setContainerStyle('margin', '2rem auto')
-    this.canvas.setAttr('height', this.getSize(10))
-    this.canvas.setAttr('width', this.getSize(10))
-    return this.canvas
-  }
-
-  getQRCode() {
-    this.qrcode.setContainerStyle('width', `150px`)
-    this.qrcode.setContainerStyle('margin', '0 auto')
-    return this.qrcode
-  }
-
-  setQRCode() {
-    this.qrcode.clear()
-    const [url, url_coded] = getControlsUrl('snake', this.state.peer.id)
-    const link = new LinkComponent({ href: url })
-    const image = new ImageComponent({ src: qrcode(url_coded) })
-    image.setContainerStyle('max-width', '10rem')
-    link.append(image)
-    this.qrcode.append(link)
-  }
-
-  reset() { this.state.ctx.clearRect(0, 0, this.getSize(10), this.getSize(10)) }
-
-  drawPlayers() {
-    for (const id in this.state.players) {
-      this.state.ctx.fillStyle = '#000000'
-      const player = this.state.players[id]
-      this.state.ctx.fillRect(...[player.x, player.y, 1, 1].map(this.getSize))
-    }
-  }
-
-  drawFruits() {
-    for (const id in this.state.fruits) {
-      this.state.ctx.fillStyle = '#ff0000'
-      const fruit = this.state.fruits[id]
-      this.state.ctx.fillRect(...[fruit.x, fruit.y, 1, 1].map(this.getSize))
-    }
-  }
-
-  addPlayer(id) { this.state.players[id] = { x: random(9), y: random(9) } }
-
-  removePlayer(id) { this.state.players = Object.keys(this.state.players).filter((k) => k != id).map((k) => this.state.players[k]) }
-
-  runAnimationFrame() {
-    this.reset()
-    this.drawPlayers()
-    this.drawFruits()
-    requestAnimationFrame(() => this.runAnimationFrame())
-  }
-
-  getFruitCollision(playerId) {
-    const player = this.state.players[playerId]
-    for (const id in this.state.fruits) {
-      const fruit = this.state.fruits[id]
-      if (fruit.x == player.x && fruit.y == player.y) return fruit
-    }
-    return null
-  }
-
-  removeFruit() { this.state.fruits = [] }
-
-  addFruit() { this.state.fruits.push({ x: random(9), y: random(9) }) }
-
-  movePlayer(player, move) {
-    const fn = this.state.moves[move]
-    if (fn) fn(player)
-    const collision = this.getFruitCollision(player)
-    if (collision) {
-      this.removeFruit(collision)
-      this.addFruit()
-    }
+  stop() {
+    this.state.running = false
   }
 }
