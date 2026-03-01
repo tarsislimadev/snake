@@ -6,23 +6,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>snake</title>
   <meta name="google-adsense-account" content="ca-pub-8803365396237758">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8803365396237758"
-    crossorigin="anonymous"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8803365396237758" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="./index.css">
 </head>
 
 <body>
+  <h1>snake</h1>
   <div id="app"></div>
 
   <script type="module">
     import { Game } from './index.js'
 
     document.body.style.margin = '0px'
+    document.body.style.backgroundColor = '#cccccc'
 
     const game = new Game()
     document.getElementById('app').appendChild(game.domElement)
     game.start()
 
-  </script>
+    game.domElement.style.display = 'block'
+    game.domElement.style.margin = '0 auto'
+ </script>
   <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8803365396237758" data-ad-slot="4501869550" data-ad-format="auto" data-full-width-responsive="true"></ins>
   <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 </body>
