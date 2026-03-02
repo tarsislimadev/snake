@@ -1,17 +1,50 @@
 import { Clock } from './clock.js'
 import { random } from './helpers/random.js'
 
-class Score { }
+class GameOverEvent extends CustomEvent {
+  static NAME = 'game.over'
+
+  constructor(points) {
+    super(GameOverEvent.NAME, { detail: { points: +points } })
+  }
+}
+
+class ScoreUpdateEvent extends CustomEvent {
+  static NAME = 'score.update'
+
+  constructor(points, lives) {
+    super(ScoreUpdateEvent.NAME, { detail: { points, lives } })
+  }
+}
+
+class Score {
+  points = 0
+  lives = 1
+
+  addPoint(points = 1) {
+    this.points += +points
+
+    window.dispatchEvent(new ScoreUpdateEvent(this.points, this.lives))
+  }
+
+  subtractLife(life = 1) {
+    this.lives -= +life
+
+    this.checkGameOver()
+  }
+
+  checkGameOver() {
+    if (this.lives <= 0) {
+      window.dispatchEvent(new GameOverEvent(this.points))
+    }
+  }
+}
 
 class PlayerMapCollisionEvent extends CustomEvent {
   static NAME = 'player.map.collision'
 
   constructor(direction) {
-    super(PlayerMapCollisionEvent.NAME, {
-      detail: {
-        direction
-      }
-    })
+    super(PlayerMapCollisionEvent.NAME, { detail: { direction } })
   }
 }
 
@@ -19,12 +52,9 @@ class PlayerFoodCollisionEvent extends CustomEvent {
   static NAME = 'player.food.collision'
 
   constructor(player, food) {
-    super(PlayerFoodCollisionEvent.NAME, {
-      detail: {
-        player: { x: player.x, y: player.y },
-        food: { x: food.x, y: food.y }
-      }
-    })
+    const p = { x: player.x, y: player.y }
+    const f = { x: food.x, y: food.y }
+    super(PlayerFoodCollisionEvent.NAME, { detail: { player: p, food: f } })
   }
 }
 
@@ -46,7 +76,7 @@ export class Game {
 
   score = new Score()
   player = { x: 0, y: 0, direction: Game.PLAYER_DOWN }
-  food = { x: random(this.map.width), y: random(this.map.height) }
+  food = this.generateFoodPosition()
   running = false
 
   constructor() { }
@@ -80,11 +110,18 @@ export class Game {
     })
 
     window.addEventListener(PlayerMapCollisionEvent.NAME, (e) => {
-      console.log(PlayerMapCollisionEvent.NAME, e.detail) // fixme
+      this.score.addPoint(-1)
+      this.score.subtractLife()
     })
 
     window.addEventListener(PlayerFoodCollisionEvent.NAME, (e) => {
-      console.log(PlayerFoodCollisionEvent.NAME, e.detail) // fixme
+      this.score.addPoint()
+      this.food = this.generateFoodPosition()
+    })
+
+    window.addEventListener(GameOverEvent.NAME, (e) => {
+      alert('Game Over! Your score was ' + e.detail.points)
+      this.reset()
     })
   }
 
@@ -104,6 +141,10 @@ export class Game {
 
   stop() {
     this.running = false
+  }
+
+  reset() {
+    // fixme
   }
 
   #goLeft() {
@@ -168,5 +209,9 @@ export class Game {
     }
 
     return this
+  }
+
+  generateFoodPosition() {
+    return { x: random(this.map.width), y: random(this.map.height) }
   }
 }
