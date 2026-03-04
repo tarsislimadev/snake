@@ -1,129 +1,33 @@
 import { Clock } from './clock.js'
 import { random } from './helpers/random.js'
 import { Score } from './score.js'
+import { Player } from './player.js'
+import { Food } from './food.js'
+import { Map } from './map.js'
 import { PlayerFoodCollisionEvent } from './events/player-food-collision-event.js'
 import { PlayerMapCollisionEvent } from './events/player-map-collision-event.js'
 import { GameOverEvent } from './events/game-over-event.js'
 
-class Direction {
-  static LEFT = 'left'
-  static RIGHT = 'right'
-  static UP = 'up'
-  static DOWN = 'down'
-}
-
-class Player {
-  x = 0
-  y = 0
-  direction = Direction.DOWN
-
-  constructor(map) {
-    this.map = map
-  }
-
-  move() {
-    switch (this.direction) {
-      case Direction.LEFT: return this.#goLeft()
-      case Direction.RIGHT: return this.#goRight()
-      case Direction.UP: return this.#goUp()
-      case Direction.DOWN: return this.#goDown()
-    }
-
-    return this
-  }
-
-  #goLeft() {
-    if (this.x - 1 < 0) {
-      window.dispatchEvent(new PlayerMapCollisionEvent(Direction.LEFT))
-      return
-    }
-
-    this.x -= 1
-  }
-
-  #goRight() {
-    if (this.x + 1 > this.map.width - 1) {
-      window.dispatchEvent(new PlayerMapCollisionEvent(Direction.RIGHT))
-      return
-    }
-
-    this.x += 1
-  }
-
-  #goUp() {
-    if (this.y - 1 < 0) {
-      window.dispatchEvent(new PlayerMapCollisionEvent(Direction.UP))
-      return
-    }
-
-    this.y -= 1
-  }
-
-  #goDown() {
-    if (this.y + 1 > this.map.height - 1) {
-      window.dispatchEvent(new PlayerMapCollisionEvent(Direction.DOWN))
-      return
-    }
-
-    this.y += 1
-  }
-
-  setDirection(d) {
-    if (d === Direction.LEFT && this.direction === Direction.RIGHT) return this;
-    if (d === Direction.RIGHT && this.direction === Direction.LEFT) return this;
-    if (d === Direction.UP && this.direction === Direction.DOWN) return this;
-    if (d === Direction.DOWN && this.direction === Direction.UP) return this;
-
-    const directions = [
-      Direction.LEFT,
-      Direction.RIGHT,
-      Direction.UP,
-      Direction.DOWN,
-    ]
-
-    if (directions.includes(d)) {
-      this.direction = d
-    }
-
-    return this
-  }
-}
-
-class Enemy { }
-
-class Food extends Enemy {
-  x = 0
-  y = 0
-
-  constructor(x, y) {
-    super()
-    this.x = x
-    this.y = y
-  }
-}
-
-class Map {
-  constructor(width, height) {
-    this.width = width
-    this.height = height
-  }
-}
-
 export class Game {
-  map = new Map(10, 10)
-  size = 50
-
   domElement = document.createElement('canvas')
   ctx = null
-  clock = new Clock()
 
+  clock = new Clock()
   score = new Score()
+  map = new Map(10, 10)
   player = new Player(this.map)
   food = this.createFood()
+
+  size = 50
+
   running = false
   eventsSet = false
+  isAI = false
 
-  constructor() { }
+  setIsAI(isAI = true) {
+    this.isAI = isAI
+    return this
+  }
 
   start() {
     this.set2d()
@@ -149,9 +53,9 @@ export class Game {
       this.checkPlayerFoodCollision()
     })
 
-    window.addEventListener('keyup', (e) => {
-      e.preventDefault()
+    window.addEventListener('keydown', (e) => e.preventDefault())
 
+    window.addEventListener('keyup', (e) => {
       const evCode = e.code.toString().toLowerCase()
 
       if (evCode.startsWith('arrow')) {
@@ -201,14 +105,10 @@ export class Game {
   }
 
   checkPlayerFoodCollision() {
-    if (
-      this.player.x == this.food.x &&
-      this.player.y == this.food.y
-    ) {
+    if (this.player.x == this.food.x && this.player.y == this.food.y) {
       window.dispatchEvent(new PlayerFoodCollisionEvent(this.player, this.food))
     }
   }
-
 
   createFood() {
     let x, y
